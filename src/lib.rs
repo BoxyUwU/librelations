@@ -291,6 +291,17 @@ impl<T: RelKind> Component for Relation<T> {
                 // FIXME support non recursive despawns
                 despawner.despawn(target);
             }
+
+            if let Some(mut noi) = entity.remove::<Noitaler<T>>() {
+                for source in T::TargetRestriction::noi_iter(noi.get_mut()) {
+                    let mut source = world.entity_mut(source);
+                    let mut rel = source.get_mut::<Relation<T>>().unwrap();
+
+                    if T::SourceRestriction::remove_rel(rel.get_mut(), e) {
+                        source.remove::<Relation<T>>();
+                    }
+                }
+            }
         }
     }
 }
