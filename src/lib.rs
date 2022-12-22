@@ -5,6 +5,9 @@ use bevy::ecs::{
     world::{EntityMut, EntityRef},
 };
 
+#[cfg(test)]
+mod testl;
+
 pub mod cyclicity;
 pub mod iter;
 pub mod restriction;
@@ -44,13 +47,21 @@ impl<T: RelKind> Component for Relation<T> {
     {
         |e, world, mut despawner| {
             let mut entity = world.entity_mut(e);
-            let mut rel = entity.get_mut::<Relation<T>>().unwrap();
+            let mut rel = entity.remove::<Relation<T>>().unwrap();
+            let noi = entity.remove::<Noitaler<T>>();
             for target in T::SourceRestriction::rel_iter(&mut rel.0).1 {
+                let mut target_thing = world.entity_mut(target);
+                let mut noi = target_thing.get_mut::<Noitaler<T>>().unwrap();
+
+                if T::TargetRestriction::remove_noi(&mut noi.0, e) {
+                    target_thing.remove::<Noitaler<T>>();
+                }
+
                 // FIXME support non recursive despawns
                 despawner.despawn(target);
             }
 
-            if let Some(mut noi) = entity.remove::<Noitaler<T>>() {
+            if let Some(mut noi) = noi {
                 for source in T::TargetRestriction::noi_iter(&mut noi.0) {
                     let mut source = world.entity_mut(source);
                     let mut rel = source.get_mut::<Relation<T>>().unwrap();
