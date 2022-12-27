@@ -274,6 +274,9 @@ mod world_queries {
     use crate::{Noitaler, RelKind, Relation};
     use bevy::ecs::query::WorldQuery;
 
+    // necessary for `derive(WorldQuery)` this is fixed in `0.10`
+    use bevy::ecs::entity::Entity;
+
     #[derive(WorldQuery)]
     #[world_query(mutable)]
     pub struct RelationMut<T: RelKind> {

@@ -6,4 +6,4 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { git = "https://github.com/BoxyUwU/bevy", branch = "despawn_hooks" }
+bevy = { git = "https://github.com/BoxyUwU/bevy", branch = "despawn_hooks_0_9_1" }
