@@ -40,7 +40,7 @@ impl<R: RelKind> AssertTreeIfAcyclic<R, One, Many> for Acyclic {
     fn assert_cyclicity(entity: EntityMut<'_>) -> Result<(), ()> {
         assert_cyclicity::<R>(entity, |entity| {
             entity
-                .get_relation::<R>()
+                .get_all_relations::<R>()
                 .map(|r| r.iter().next().unwrap().0)
         })
     }
@@ -48,14 +48,18 @@ impl<R: RelKind> AssertTreeIfAcyclic<R, One, Many> for Acyclic {
 impl<R: RelKind> AssertTreeIfAcyclic<R, Many, One> for Acyclic {
     fn assert_cyclicity(entity: EntityMut<'_>) -> Result<(), ()> {
         assert_cyclicity::<R>(entity, |entity| {
-            entity.get_noitaler::<R>().map(|r| r.iter().next().unwrap())
+            entity
+                .get_all_noitalers::<R>()
+                .map(|r| r.iter().next().unwrap())
         })
     }
 }
 impl<R: RelKind> AssertTreeIfAcyclic<R, One, One> for Acyclic {
     fn assert_cyclicity(entity: EntityMut<'_>) -> Result<(), ()> {
         assert_cyclicity::<R>(entity, |entity| {
-            entity.get_noitaler::<R>().map(|r| r.iter().next().unwrap())
+            entity
+                .get_all_noitalers::<R>()
+                .map(|r| r.iter().next().unwrap())
         })
     }
 }

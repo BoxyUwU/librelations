@@ -39,6 +39,15 @@ impl<T: RelKind> RelationMutItem<'_, T> {
         <&Self>::into_iter(self)
     }
 }
+impl<'a, T: RelKind> IntoIterator for RelationRefItem<'a, T> {
+    type Item = (Entity, &'a T);
+    type IntoIter = RelationIter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let (data, targets) = T::SourceRestriction::rel_iter(&self.inner.0);
+        RelationIter { targets, data }
+    }
+}
 
 pub struct RelationIterMut<'a, T: RelKind> {
     targets: <T::SourceRestriction as Restriction<T>>::RelTargetIter<'a>,

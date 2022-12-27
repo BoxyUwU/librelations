@@ -1,7 +1,7 @@
 use bevy::ecs::prelude::*;
 
 use crate::{
-    cyclicity::{Acyclic, Cyclic},
+    cyclicity::Cyclic,
     restriction::{Many, One},
     EntityMutExt, EntityRefExt, RelKind,
 };
@@ -20,7 +20,19 @@ macro_rules! inner_maker {
         spawn: [$($entity:ident),*]
         $($foo:tt)*
     ) => {
-        $(let $entity = $world.spawn(()).id();)*
+        $(
+            let $entity = $world.spawn(()).id();
+        )*
+        inner_maker!{$world; $($foo)*}
+    };
+    (
+        $world:ident;
+        despawn: [$($entity:ident),*]
+        $($foo:tt)*
+    ) => {
+        $(
+            $world.despawn($entity);
+        )*
         inner_maker!{$world; $($foo)*}
     };
     (
@@ -55,9 +67,8 @@ macro_rules! inner_maker {
         $($foo:tt)*
     ) => {
         $(
-            match $world.entity($source).get_relation::<R>().and_then(|rels| rels.iter().find(|(t, _)| *t == $target).map(drop)) {
-                None => panic!("expected `{:?}` to have relation `{}` targetting `{:?}`", $source, std::any::type_name::<R>(), $target),
-                Some(_) => {},
+            if let None = $world.entity($source).get_relation::<R>($target) {
+                panic!("expected `{:?}` to have relation `{}` targetting `{:?}`", $source, std::any::type_name::<R>(), $target);
             }
         )*
         inner_maker!{$world; $($foo)*}
@@ -70,20 +81,9 @@ macro_rules! inner_maker {
         $($foo:tt)*
     ) => {
         $(
-            match $world.entity($source).get_relation::<R>().and_then(|rels| rels.iter().find(|(t, _)| *t == $target).map(drop)) {
-                None => {},
-                Some(_) => panic!("expected `{:?}` to not have relation `{}` targetting `{:?}`", $source, std::any::type_name::<R>(), $target),
+            if let Some(_) = $world.entity($source).get_relation::<R>($target) {
+                panic!("expected `{:?}` to not have relation `{}` targetting `{:?}`", $source, std::any::type_name::<R>(), $target);
             }
-        )*
-        inner_maker!{$world; $($foo)*}
-    };
-    (
-        $world:ident;
-        despawn: [$($entity:ident),*]
-        $($foo:tt)*
-    ) => {
-        $(
-            $world.despawn($entity);
         )*
         inner_maker!{$world; $($foo)*}
     };
@@ -93,7 +93,7 @@ macro_rules! inner_maker {
         $($foo:tt)*
     ) => {
         $(
-            if $world.get_entity($entity).is_none() {
+            if let None = $world.get_entity($entity) {
                 panic!("expected {:?} to be alive", $entity);
             }
         )*
@@ -105,22 +105,10 @@ macro_rules! inner_maker {
         $($foo:tt)*
     ) => {
         $(
-            if $world.get_entity($entity).is_some() {
+            if let Some(_) = $world.get_entity($entity) {
                 panic!("expected {:?} to be dead", $entity);
             }
         )*
-        inner_maker!{$world; $($foo)*}
-    };
-    (
-        $world:ident;
-        custom: {
-            $($code:stmt)*
-        }
-        $($foo:tt)*
-    ) => {
-        {$(
-            $code
-        )*}
         inner_maker!{$world; $($foo)*}
     };
     ( $world:ident; ) => {};
@@ -212,35 +200,36 @@ fn source_restriction() {
     };
 }
 
-// fn despawning_removes_noitaler() {
-//     struct R;
-//     impl RelKind for R {
-//         type SourceRestriction = One;
-//         type TargetRestriction = Many;
-//         type Cyclicity = Cyclic;
-//     }
+#[test]
+fn despawning_removes_noitaler() {
+    struct R;
+    impl RelKind for R {
+        type SourceRestriction = One;
+        type TargetRestriction = Many;
+        type Cyclicity = Cyclic;
+    }
 
-//     test_world! {
-//         spawn: [e0, e1, e2, e3]
+    test_world! {
+        spawn: [e0, e1, e2, e3]
 
-//         insert: {
-//             e0->e2,
-//             e1->e2,
-//             e2->e3,
-//         }
+        insert: {
+            e0->e2,
+            e1->e2,
+            e2->e3,
+        }
 
-//         exists: {
-//             e0->e2,
-//             e1->e2,
-//             e2->e3,
-//         }
+        exists: {
+            e0->e2,
+            e1->e2,
+            e2->e3,
+        }
 
-//         despawn: [e0]
-//         dead: [e0, e2, e3]
-//         alive: [e1]
+        despawn: [e0]
+        dead: [e0, e2, e3]
+        alive: [e1]
 
-//         custom: {
-//             world.entity(e0);
-//         }
-//     };
-// }
+        not_exists: {
+            e1->e2,
+        }
+    };
+}

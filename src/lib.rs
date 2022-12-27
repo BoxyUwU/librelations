@@ -89,11 +89,40 @@ impl EntityMutExtInternal for EntityMut<'_> {
 }
 
 pub trait EntityRefExt {
-    fn get_relation<T: RelKind>(&self) -> Option<RelationRefItem<'_, T>>;
-    fn get_noitaler<T: RelKind>(&self) -> Option<NoitalerRefItem<'_, T>>;
+    fn get_all_relations<T: RelKind>(&self) -> Option<RelationRefItem<'_, T>>;
+    fn get_relation<T: RelKind>(&self, target: Entity) -> Option<&T> {
+        self.get_all_relations().and_then(|item| {
+            item.into_iter().find_map(|(cur_target, data)| {
+                if cur_target == target {
+                    Some(data)
+                } else {
+                    None
+                }
+            })
+        })
+    }
+    fn get_all_noitalers<T: RelKind>(&self) -> Option<NoitalerRefItem<'_, T>>;
+    fn get_noitaler<T: RelKind>(&self, target: Entity) -> Option<()> {
+        self.get_all_noitalers::<T>().and_then(|item| {
+            item.into_iter()
+                .any(|cur_target| cur_target == target)
+                .then_some(())
+        })
+    }
 }
 pub trait EntityMutExt {
-    fn get_relation_mut<T: RelKind>(&mut self) -> Option<RelationMutItem<'_, T>>;
+    fn get_all_relations_mut<T: RelKind>(&mut self) -> Option<RelationMutItem<'_, T>>;
+    fn get_relation_mut<T: RelKind>(&mut self, target: Entity) -> Option<&mut T> {
+        self.get_all_relations_mut().and_then(|item| {
+            item.into_iter().find_map(|(cur_target, data)| {
+                if cur_target == target {
+                    Some(data)
+                } else {
+                    None
+                }
+            })
+        })
+    }
 
     // FIXME it'd be nice if relation insert/removes could just be bundles and use "normal" apis.
     // unfortuantly bevy's `Bundle` is good for little more than "set of component types" so it is
@@ -102,33 +131,33 @@ pub trait EntityMutExt {
     fn remove_relation<T: RelKind>(&mut self, target: Entity) -> &mut Self;
 }
 impl EntityRefExt for EntityRef<'_> {
-    fn get_relation<T: RelKind>(&self) -> Option<RelationRefItem<'_, T>> {
+    fn get_all_relations<T: RelKind>(&self) -> Option<RelationRefItem<'_, T>> {
         Some(RelationRefItem {
             inner: self.get::<Relation<T>>()?,
         })
     }
 
-    fn get_noitaler<T: RelKind>(&self) -> Option<NoitalerRefItem<'_, T>> {
+    fn get_all_noitalers<T: RelKind>(&self) -> Option<NoitalerRefItem<'_, T>> {
         Some(NoitalerRefItem {
             inner: self.get::<Noitaler<T>>()?,
         })
     }
 }
 impl EntityRefExt for EntityMut<'_> {
-    fn get_relation<T: RelKind>(&self) -> Option<RelationRefItem<'_, T>> {
+    fn get_all_relations<T: RelKind>(&self) -> Option<RelationRefItem<'_, T>> {
         Some(RelationRefItem {
             inner: self.get::<Relation<T>>()?,
         })
     }
 
-    fn get_noitaler<T: RelKind>(&self) -> Option<NoitalerRefItem<'_, T>> {
+    fn get_all_noitalers<T: RelKind>(&self) -> Option<NoitalerRefItem<'_, T>> {
         Some(NoitalerRefItem {
             inner: self.get::<Noitaler<T>>()?,
         })
     }
 }
 impl EntityMutExt for EntityMut<'_> {
-    fn get_relation_mut<T: RelKind>(&mut self) -> Option<RelationMutItem<'_, T>> {
+    fn get_all_relations_mut<T: RelKind>(&mut self) -> Option<RelationMutItem<'_, T>> {
         Some(RelationMutItem {
             inner: self.get_mut::<Relation<T>>()?,
         })
