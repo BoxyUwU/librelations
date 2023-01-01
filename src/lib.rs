@@ -17,7 +17,7 @@ use cyclicity::AssertTreeIfAcyclic;
 pub use restriction::Restriction;
 pub use world_queries::{
     NoitalerRef, NoitalerRefItem, RelationMut, RelationMutItem, RelationMutReadOnly as RelationRef,
-    RelationMutReadOnlyItem as RelationRefItem,
+    RelationMutReadOnlyItem as RelationRefItem, WithRelation, WithoutRelation,
 };
 
 pub use cyclicity::Cyclicity;
@@ -273,6 +273,7 @@ pub mod commands {
 mod world_queries {
     use crate::{Noitaler, RelKind, Relation};
     use bevy::ecs::query::WorldQuery;
+    use bevy::prelude::{With, Without};
 
     // necessary for `derive(WorldQuery)` this is fixed in `0.10`
     use bevy::ecs::entity::Entity;
@@ -286,6 +287,16 @@ mod world_queries {
     #[derive(WorldQuery)]
     pub struct NoitalerRef<T: RelKind> {
         pub(crate) inner: &'static Noitaler<T>,
+    }
+
+    #[derive(WorldQuery)]
+    pub struct WithRelation<R: RelKind> {
+        inner: With<Relation<R>>,
+    }
+
+    #[derive(WorldQuery)]
+    pub struct WithoutRelation<R: RelKind> {
+        inner: Without<Relation<R>>,
     }
 }
 
