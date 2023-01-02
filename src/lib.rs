@@ -22,6 +22,8 @@ pub use world_queries::{
 
 pub use cyclicity::Cyclicity;
 
+pub use commands::EntityCommandsExt;
+
 pub trait RelKind: Sized + Send + Sync + 'static {
     /// Number of relations of kind `Self` allowed on a source entity
     type SourceRestriction: Restriction<Self>;
@@ -240,8 +242,23 @@ impl EntityMutExt for EntityMut<'_> {
 }
 
 pub mod commands {
+    use bevy::ecs::system::EntityCommands;
+
     use super::{Command, Entity, EntityMutExt, RelKind, World};
     use std::marker::PhantomData;
+
+    pub trait EntityCommandsExt<'w, 's, 'a> {
+        fn insert_relation<T: RelKind>(
+            &mut self,
+            data: T,
+            target: Entity,
+        ) -> &mut EntityCommands<'w, 's, 'a>;
+
+        fn remove_relation<T: RelKind>(
+            &mut self,
+            target: Entity,
+        ) -> &mut EntityCommands<'w, 's, 'a>;
+    }
 
     pub struct InsertRelation<T: RelKind> {
         source: Entity,
@@ -266,6 +283,35 @@ pub mod commands {
             world
                 .entity_mut(self.source)
                 .remove_relation::<T>(self.target);
+        }
+    }
+
+    impl<'w, 's, 'a> EntityCommandsExt<'w, 's, 'a> for EntityCommands<'w, 's, 'a> {
+        fn insert_relation<T: RelKind>(
+            &mut self,
+            data: T,
+            target: Entity,
+        ) -> &mut EntityCommands<'w, 's, 'a> {
+            let source = self.id();
+            self.commands().add(InsertRelation {
+                source,
+                data,
+                target,
+            });
+            self
+        }
+
+        fn remove_relation<T: RelKind>(
+            &mut self,
+            target: Entity,
+        ) -> &mut EntityCommands<'w, 's, 'a> {
+            let source = self.id();
+            self.commands().add(RemoveRelation {
+                source,
+                target,
+                _p: PhantomData::<T>,
+            });
+            self
         }
     }
 }
