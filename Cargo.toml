@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 bevy = { git = "https://github.com/BoxyUwU/bevy", branch = "despawn_hooks_0_9_1" }
+
+[dev-dependencies]
+rand = "0.8"
